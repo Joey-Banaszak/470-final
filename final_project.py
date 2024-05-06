@@ -55,19 +55,6 @@ class NaiveBayesClassifier:
                 predicted_class = label
         return predicted_class
 
-# download the data set
-filename = 'spambase.csv'
-temp = []
-with open(filename, 'r') as file:
-  temp = file.readline().strip().split(',')
-  data = [[]] * len(temp)
-  for i in range(len(temp)):
-    val = temp[i]
-    data[i] = [val]
-  for j in range(4600): # had to brute force cause I couldn't remember/ figure out how to check for E.O.F. in python :/
-    temp = file.readline().strip().split(',')
-    for i in range(len(temp)):
-      data[i].append(temp[i])
 
 def model(train_data, val_data):
     clf = NaiveBayesClassifier()
@@ -155,31 +142,36 @@ def LR_model_learning(X_train, y_train, X_val, y_val, epoch=100, learning_rate=0
     
     return best_model
 
-def LR_model_evaluation(X, M):
-    # Add intercept column to X
-    X = add_intercept(X)
-    
-    # Calculate predicted y
-    pred_y = sigmoid(np.dot(X, M))
-    
-    # Predict labels based on pred_y
-    pred_labels = (pred_y > 0.5).astype(int)
-    
-    return pred_labels
-
 def performance(model, data):
   print("result:", model)
+    
+def main():
+    # download the data set
+    filename = 'spambase.csv'
+    temp = []
+    with open(filename, 'r') as file:
+      temp = file.readline().strip().split(',')
+      data = [[]] * len(temp)
+      for i in range(len(temp)):
+        val = temp[i]
+        data[i] = [val]
+      for j in range(4600): # had to brute force cause I couldn't remember/ figure out how to check for E.O.F. in python :/
+        temp = file.readline().strip().split(',')
+        for i in range(len(temp)):
+          data[i].append(temp[i])
+    
+    random.shuffle(data) # change if you are using pandas dataframe
+    split_index = int(len(data) * 0.8)
+    training = data[:split_index]
+    test = data[split_index:]
+    
+    fold5 = KFold(n_splits=5)
+    
+    # Perform 5-fold cross-validation
+    for train_idx, val_idx in fold5.split(training):
+        sub_val = [training[i] for i in val_idx]
+        sub_train = [training[i] for i in train_idx]
+        nb_clf = model(sub_train, sub_val)  # Train the model
+        performance(nb_clf, test)  # Evaluate the model on test data
 
-random.shuffle(data) # change if you are using pandas dataframe
-split_index = int(len(data) * 0.8)
-training = data[:split_index]
-test = data[split_index:]
-
-fold5 = KFold(n_splits=5)
-
-# Perform 5-fold cross-validation
-for train_idx, val_idx in fold5.split(training):
-    sub_val = [training[i] for i in val_idx]
-    sub_train = [training[i] for i in train_idx]
-    nb_clf = model(sub_train, sub_val)  # Train the model
-    performance(nb_clf, test)  # Evaluate the model on test data
+main()
